@@ -17,7 +17,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 import optuna
 
 from itertools import islice
-from compiler_gym.wrappers import CycleOverBenchmarks
+from compiler_gym.wrappers import RandomOrderBenchmarks
 
 from typing import Any, Dict
 
@@ -105,7 +105,7 @@ def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
 
     train_benchmarks = list(dataset) # N_bechmarks total benchmarks the dataset
 
-    env = CycleOverBenchmarks(env, train_benchmarks)
+    env = RandomOrderBenchmarks(env, train_benchmarks)
 
     return env
 
@@ -149,6 +149,7 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
         "target_update_interval": target_update_interval,
         "learning_starts": learning_starts,
         "policy_kwargs": dict(net_arch=net_arch),
+        "device": "cuda"
     }
 
     # if trial.using_her_replay_buffer:
@@ -177,7 +178,7 @@ def objective(trial):
 
     # Iteratively train the model on the training environment.
     total_steps = 5000
-    step_size = 1000
+    step_size = trial.suggest_int("step_size", 200, 2000, step=100)
     for steps in range(1000, total_steps, step_size): # Steps goes up by step_size until it reaches total_steps.
 
       model.learn(total_timesteps=step_size) # Train
@@ -255,6 +256,7 @@ def sample_sac_params(trial: optuna.Trial) -> Dict[str, Any]:
         "tau": tau,
         "target_entropy": target_entropy,
         "policy_kwargs": dict(log_std_init=log_std_init, net_arch=net_arch),
+        "device": "cuda"
     }
 
     # if trial.using_her_replay_buffer:
@@ -310,4 +312,4 @@ if __name__ == "__main__":
 
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
     study = optuna.create_study(study_name=f"dqn_test_all", direction="maximize", storage=database_url, load_if_exists=True)
-    study.optimize(objective, n_trials=15, show_progress_bar=True, n_jobs = -1)
+    study.optimize(objective, n_trials=25, show_progress_bar=True, n_jobs = -1)
