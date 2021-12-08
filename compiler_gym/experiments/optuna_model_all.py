@@ -172,7 +172,7 @@ def objective(trial):
 
 
     # Iteratively train the model on the training environment.
-    total_steps = 5000
+    total_steps = 50000
     step_size = trial.suggest_int("step_size", 200, 2000, step=100)
     for steps in range(1000, total_steps, step_size): # Steps goes up by step_size until it reaches total_steps.
 
