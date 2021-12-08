@@ -17,7 +17,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 import optuna
 
 from itertools import islice
-from compiler_gym.wrappers import RandomOrderBenchmarks
+from compiler_gym.wrappers import CycleOverBenchmarks
 
 from typing import Any, Dict
 
@@ -31,11 +31,6 @@ import random
 with open(f"../func/not_cbench_cg.txt", "r") as benchmarks_files:
   benchmarks = benchmarks_files.readlines()
 
-not_cbench = []
-for benchmark in benchmarks:
-    if benchmark.startswith("benchmark://cbench"):
-        continue 
-    not_cbench.append(benchmark)
 
 def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     """Make the reinforcement learning environment for this experiment.
@@ -72,7 +67,7 @@ def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     #train_benchmarks = list(islice(dataset, N_benchmarks)) # N_bechmarks total benchmarks the dataset
     # train_benchmarks = list(dataset)
     # len(train_benchmarks) # , val_benchmarks = train_benchmarks[:50], train_benchmarks[50:]
-    test_set = not_cbench[[random.randrange(0,len(benchmarks)) for i in range(0,5000)]]
+    test_set = benchmarks[[random.randrange(0,len(benchmarks)) for i in range(0,5000)]]
     env = CycleOverBenchmarks(env, test_set)
     return env
 
@@ -105,7 +100,7 @@ def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
 
     train_benchmarks = list(dataset) # N_bechmarks total benchmarks the dataset
 
-    env = RandomOrderBenchmarks(env, train_benchmarks)
+    env = CycleOverBenchmarks(env, train_benchmarks)
 
     return env
 
