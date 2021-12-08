@@ -11,10 +11,10 @@ env.step(env.action_space.sample())
 env.close()     
 
 
-with open(f"list_of_benchmarks_cg.txt", "w") as fstream:
+with open(f"not_cbench_cg.txt", "w") as fstream:
   for count, benchmark in enumerate(env.datasets.benchmark_uris()):
     if count%50000 == 0: 
         print(f"On {count}")
         print(benchmark)
-    if benchmark.startswith("benchmark"):
+    if benchmark.startswith("benchmark") and not benchmark.startswith("benchmark://cbench"):
       fstream.write(benchmark + '\n')

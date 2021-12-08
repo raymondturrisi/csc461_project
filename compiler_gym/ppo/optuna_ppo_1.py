@@ -26,17 +26,6 @@ import time
 import logging
 import sys
 
-import random
-
-with open(f"../func/not_cbench_cg.txt", "r") as benchmarks_files:
-  benchmarks = benchmarks_files.readlines()
-
-not_cbench = []
-for benchmark in benchmarks:
-    if benchmark.startswith("benchmark://cbench"):
-        continue 
-    not_cbench.append(benchmark)
-
 def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     """Make the reinforcement learning environment for this experiment.
     
@@ -47,33 +36,25 @@ def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
         observation_space="Autophase",
         reward_space="IrInstructionCountOz",
     )
-
-    
-    # Finally, we impose a time limit on the environment so that every episode
-    # for 5 steps or fewer. This is because the environment's task is continuous
-    # and no action is guaranteed to result in a terminal state. Adding a time
-    # limit means we don't have to worry about learning when an agent should 
-    # stop, though again this limits the potential improvements that the agent
-    # can achieve compared to using an unbounded maximum episode length.
     
     env = TimeLimit(env, max_episode_steps=1000)
 
-    #del env.datasets["cbench-v1"]
-    #del env.datasets["generator://csmith-v0"]
-    #del env.datasets["generator://llvm-stress-v0"]
-    #dataset = env.datasets.benchmarks() # Every dataset besides cbench
+    del env.datasets["cbench-v1"]
+    del env.datasets["generator://csmith-v0"]
+    del env.datasets["generator://llvm-stress-v0"]
+    dataset = env.datasets.benchmarks() # Every dataset besides cbench
 
     # Each dataset has a `benchmarks()` method that returns an iterator over the
     # benchmarks within the dataset. Here we will use iterator sliceing to grab a 
     # handful of benchmarks for training and validation.
 
-    #N_benchmarks = 5000
+    N_benchmarks = 5000
 
-    #train_benchmarks = list(islice(dataset, N_benchmarks)) # N_bechmarks total benchmarks the dataset
+    train_benchmarks = list(islice(dataset, N_benchmarks)) # N_bechmarks total benchmarks the dataset
     # train_benchmarks = list(dataset)
     # len(train_benchmarks) # , val_benchmarks = train_benchmarks[:50], train_benchmarks[50:]
-    test_set = not_cbench[[random.randrange(0,len(benchmarks)) for i in range(0,5000)]]
-    env = CycleOverBenchmarks(env, test_set)
+
+    env = CycleOverBenchmarks(env, train_benchmarks)
     return env
 
 def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
