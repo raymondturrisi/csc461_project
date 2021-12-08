@@ -37,6 +37,7 @@ def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     
       From FB example.
     """
+    global benchmarks
     env = compiler_gym.make(
         "llvm-ic-v0",
         observation_space="Autophase",
@@ -51,23 +52,13 @@ def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     # stop, though again this limits the potential improvements that the agent
     # can achieve compared to using an unbounded maximum episode length.
     
-    env = TimeLimit(env, max_episode_steps=1000)
-
-    #del env.datasets["cbench-v1"]
-    #del env.datasets["generator://csmith-v0"]
-    #del env.datasets["generator://llvm-stress-v0"]
-    #dataset = env.datasets.benchmarks() # Every dataset besides cbench
+    env = TimeLimit(env, max_episode_steps=2000)
 
     # Each dataset has a `benchmarks()` method that returns an iterator over the
     # benchmarks within the dataset. Here we will use iterator sliceing to grab a 
     # handful of benchmarks for training and validation.
 
-    #N_benchmarks = 5000
-
-    #train_benchmarks = list(islice(dataset, N_benchmarks)) # N_bechmarks total benchmarks the dataset
-    # train_benchmarks = list(dataset)
-    # len(train_benchmarks) # , val_benchmarks = train_benchmarks[:50], train_benchmarks[50:]
-    test_set = benchmarks[[random.randrange(0,len(benchmarks)) for i in range(0,5000)]]
+    test_set = random.choices(benchmarks,k=5000)
     env = CycleOverBenchmarks(env, test_set)
     return env
 
@@ -90,7 +81,7 @@ def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     # limit means we don't have to worry about learning when an agent should 
     # stop, though again this limits the potential improvements that the agent
     # can achieve compared to using an unbounded maximum episode length.
-    env = TimeLimit(env, max_episode_steps=1000)
+    env = TimeLimit(env, max_episode_steps=2000)
 
     dataset = env.datasets["cbench-v1"] # Small dataset
 
@@ -144,7 +135,7 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
         "target_update_interval": target_update_interval,
         "learning_starts": learning_starts,
         "policy_kwargs": dict(net_arch=net_arch),
-        "device": "cuda"
+        "device": f"cuda:{random.randrange(0,3)}"
     }
 
     # if trial.using_her_replay_buffer:
@@ -170,10 +161,11 @@ def objective(trial):
 
     model = DQN(**(sample_dqn_params(trial))) # Instantiate the model with sampled hyperparameters.
 
-
     # Iteratively train the model on the training environment.
     total_steps = 50000
-    step_size = trial.suggest_int("step_size", 200, 2000, step=100)
+    
+    step_size = 2000
+
     for steps in range(1000, total_steps, step_size): # Steps goes up by step_size until it reaches total_steps.
 
       model.learn(total_timesteps=step_size) # Train
@@ -188,11 +180,10 @@ def objective(trial):
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
             raise optuna.TrialPruned()
-          
-      
+        
       # model.save(f"dqn_llvm_model_{ ts }")
 
-      print("Model saved. . .")
+      print(f"Model on: {steps}/{total_steps}")
 
     return score
 
