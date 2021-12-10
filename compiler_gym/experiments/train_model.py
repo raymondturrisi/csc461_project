@@ -40,10 +40,8 @@ def train(env, model):
     episodes = 1000000 # The number of episodes used to learn
     episode_length = 500 # The maximum number of transformations
     for i in range(1, episodes+1):
-        try:
-            model.learn(total_timesteps=episode_length)
-        except Exception as e:
-            print(e.message)
+        model.learn(total_timesteps=episode_length)
+        print(i)
         if i % 5000 == 0:
             ts = calendar.timegm(time.gmtime())
             print ("Average Reward for Step " + str(i))
