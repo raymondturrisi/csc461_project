@@ -300,7 +300,7 @@ def multi_model_objective(trial):
     return score
 
 if __name__ == "__main__":
-    database_url = "postgresql://yzvxgwluxjnkap:8cd45bfa27d5df1577be2e2b20a35c90cf154d272c8b5975bb28266852c7dbd9@ec2-3-231-112-124.compute-1.amazonaws.com:5432/d1mqml0sjdqj22"
+    database_url = "postgresql://uuiqr5ei8ll3q:pd0a212fdb3d2379d6b849a598a75c6825267df881bb20ac19d97f2afd24a4aa3@ec2-3-218-203-60.compute-1.amazonaws.com:5433/d6h21bev0n8gtf"
 
     ts = calendar.timegm(time.gmtime()) # Timestamp for uniqueness of the study name.
 
