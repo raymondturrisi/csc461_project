@@ -39,15 +39,21 @@ def test_env():
 def train(env, model):
     episodes = 1000000 # The number of episodes used to learn
     episode_length = 500 # The maximum number of transformations
+    error_count = 0
     for i in range(1, episodes+1):
-        model.learn(total_timesteps=episode_length)
-        print(i)
+        try:
+            model.learn(total_timesteps=episode_length)
+        except:
+            print("Error running model. Most likely failed to parse the LLVM bitcode for some reason")
+            error_count += 1
+        # print(i)
         if i % 5000 == 0:
             ts = calendar.timegm(time.gmtime())
             print ("Average Reward for Step " + str(i))
             model.save("models/DQN_model_1"+str(ts))
     
     print("DONE")
+    print("There were " + str(error_count) + " error(s) when trying to parse the LLVM bitcode")
 
             
 
