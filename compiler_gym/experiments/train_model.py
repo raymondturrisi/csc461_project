@@ -41,7 +41,8 @@ def train(env, model):
         episode_reward = 0
 
         while not done and action_count < episode_length and actions_since_last_change < patience: 
-            action, _ = model.predict(obs)
+            # action, _ = model.predict(obs)
+            action = env.action_space.sample()
             new_obs, reward, done, info = env.step(action)
             action_count += 1
             episode_reward += reward
@@ -51,15 +52,16 @@ def train(env, model):
             else:
                 actions_since_last_change = 0
             
-            model.learn(gradient_steps=1, batch_size = 32)
+            model.learn(total_timesteps=1)
 
             obs = new_obs
 
-            print("Step: " + str(i) + " Episode Total: " + "{:.4f}".format(episode_reward) + " Action: " + action)
+            # print("Step: " + str(i) + " Episode Total: " + "{:.4f}".format(episode_reward) + " Action: " + str(action))
         
+        print ("Average Reward for Step " + str(i) + ": " + str(episode_reward/episode_length) + "\nTotal Reward: " + str(episode_reward))
         ts = calendar.timegm(time.gmtime())
-
-        model.save("/models/DQN_model_"+ts)
+        if i % 1000 == 0:
+            model.save("models/DQN_model_"+str(ts))
     
     print("DONE")
 
@@ -81,8 +83,9 @@ if __name__ == "__main__":
         "exploration_final_eps": 0.031248308796828307,
         "target_update_interval": 1,
         "learning_starts": 20000,
-        "policy_kwargs": dict(net_arch='tiny'),
-        "device": "cuda"
+        "policy_kwargs": dict(net_arch=[64]),
+        "device": "cuda",
+        "verbose": 1,
     }
     model = DQN(**hyperparams)
     train(env,model)
