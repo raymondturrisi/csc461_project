@@ -20,7 +20,7 @@ def train_env():
     del env.datasets["generator://llvm-stress-v0"]
     train_benchmarks = env.datasets
 
-    env = TimeLimit(env, max_episode_steps=2000)
+    env = TimeLimit(env, max_episode_steps=500)
     env = RandomOrderBenchmarks(env, list(train_benchmarks))
     return env
 
@@ -38,7 +38,7 @@ def test_env():
 def train(env, model):
 
     episodes = 1000000 # The number of episodes used to learn
-    episode_length = 5 # The maximum number of transformations
+    episode_length = 500 # The maximum number of transformations
     patience = 30 # The maximum transformations with zero change tolerated before a new episode
     for i in range(1, episodes+1):  
         model.learn(total_timesteps=episode_length)
