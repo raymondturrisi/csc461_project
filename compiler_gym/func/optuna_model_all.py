@@ -17,7 +17,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 import optuna
 
 from itertools import islice
-from compiler_gym.wrappers import CycleOverBenchmarks
+from compiler_gym.wrappers import RandomOrderBenchmarks
 
 from typing import Any, Dict
 
@@ -28,16 +28,20 @@ import sys
 
 import random
 
-#with open(f"../func/not_cbench_cg.txt", "r") as benchmarks_files:
-#  benchmarks = benchmarks_files.readlines()
+with open(f"../func/not_cbench_cg.txt", "r") as benchmarks_files:
+  benchmarks = benchmarks_files.readlines()
 
+not_cbench = []
+for benchmark in benchmarks:
+    if benchmark.startswith("benchmark://cbench"):
+        continue 
+    not_cbench.append(benchmark)
 
 def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     """Make the reinforcement learning environment for this experiment.
     
       From FB example.
     """
-    #global benchmarks
     env = compiler_gym.make(
         "llvm-ic-v0",
         observation_space="Autophase",
@@ -52,22 +56,24 @@ def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     # stop, though again this limits the potential improvements that the agent
     # can achieve compared to using an unbounded maximum episode length.
     
-    env = TimeLimit(env, max_episode_steps=2000)
-    del env.datasets["generator://csmith-v0"]
-    del env.datasets["generator://llvm-stress-v0"]
-    del env.datasets["cbench-v1"]
+    env = TimeLimit(env, max_episode_steps=1000)
+
+    #del env.datasets["cbench-v1"]
+    #del env.datasets["generator://csmith-v0"]
+    #del env.datasets["generator://llvm-stress-v0"]
+    #dataset = env.datasets.benchmarks() # Every dataset besides cbench
 
     # Each dataset has a `benchmarks()` method that returns an iterator over the
     # benchmarks within the dataset. Here we will use iterator sliceing to grab a 
     # handful of benchmarks for training and validation.
 
-    #test_set = random.choices(benchmarks,k=5000)
-    
-    dataset = env.datasets.benchmarks()
-    
-    train_benchmarks = list(islice(dataset, 5000))
+    #N_benchmarks = 5000
 
-    env = CycleOverBenchmarks(env, train_benchmarks)
+    #train_benchmarks = list(islice(dataset, N_benchmarks)) # N_bechmarks total benchmarks the dataset
+    # train_benchmarks = list(dataset)
+    # len(train_benchmarks) # , val_benchmarks = train_benchmarks[:50], train_benchmarks[50:]
+    test_set = not_cbench[[random.randrange(0,len(benchmarks)) for i in range(0,5000)]]
+    env = CycleOverBenchmarks(env, test_set)
     return env
 
 def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
@@ -89,7 +95,7 @@ def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     # limit means we don't have to worry about learning when an agent should 
     # stop, though again this limits the potential improvements that the agent
     # can achieve compared to using an unbounded maximum episode length.
-    env = TimeLimit(env, max_episode_steps=2000)
+    env = TimeLimit(env, max_episode_steps=1000)
 
     dataset = env.datasets["cbench-v1"] # Small dataset
 
@@ -99,7 +105,7 @@ def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
 
     train_benchmarks = list(dataset) # N_bechmarks total benchmarks the dataset
 
-    env = CycleOverBenchmarks(env, train_benchmarks)
+    env = RandomOrderBenchmarks(env, train_benchmarks)
 
     return env
 
@@ -109,7 +115,7 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
     NOTE: Comes from: https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/utils/hyperparams_opt.py
     Sampler for DQN hyperparams.
     :param trial:
-    :retur/
+    :return:
     """
     policy = 'MlpPolicy' # trial.suggest_categorical("policy", ["MlpPolicy", "CnnPolicy"])
     gamma = trial.suggest_categorical("gamma", [0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999])
@@ -142,8 +148,8 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
         "exploration_final_eps": exploration_final_eps,
         "target_update_interval": target_update_interval,
         "learning_starts": learning_starts,
-        "policy_kwargs": dict(net_arch=net_arch)#,
-        #"device": f"cuda:{random.randrange(0,3)}"
+        "policy_kwargs": dict(net_arch=net_arch),
+        "device": "cuda"
     }
 
     # if trial.using_her_replay_buffer:
@@ -169,11 +175,10 @@ def objective(trial):
 
     model = DQN(**(sample_dqn_params(trial))) # Instantiate the model with sampled hyperparameters.
 
-    # Iteratively train the model on the training environment.
-    total_steps = 50000
-    
-    step_size = 2000
 
+    # Iteratively train the model on the training environment.
+    total_steps = 5000
+    step_size = trial.suggest_int("step_size", 200, 2000, step=100)
     for steps in range(1000, total_steps, step_size): # Steps goes up by step_size until it reaches total_steps.
 
       model.learn(total_timesteps=step_size) # Train
@@ -188,10 +193,11 @@ def objective(trial):
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
             raise optuna.TrialPruned()
-        
+          
+      
       # model.save(f"dqn_llvm_model_{ ts }")
 
-      print(f"Model on: {steps}/{total_steps}")
+      print("Model saved. . .")
 
     return score
 
@@ -300,10 +306,10 @@ def multi_model_objective(trial):
     return score
 
 if __name__ == "__main__":
-    database_url = "postgresql://uuiqr5ei8ll3q:pd0a212fdb3d2379d6b849a598a75c6825267df881bb20ac19d97f2afd24a4aa3@ec2-3-218-203-60.compute-1.amazonaws.com:5433/d6h21bev0n8gtf"
+    database_url = "postgresql://yzvxgwluxjnkap:8cd45bfa27d5df1577be2e2b20a35c90cf154d272c8b5975bb28266852c7dbd9@ec2-3-231-112-124.compute-1.amazonaws.com:5432/d1mqml0sjdqj22"
 
     ts = calendar.timegm(time.gmtime()) # Timestamp for uniqueness of the study name.
 
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
     study = optuna.create_study(study_name=f"dqn_test_all", direction="maximize", storage=database_url, load_if_exists=True)
-    study.optimize(objective, n_trials=5, n_jobs = -1)
+    study.optimize(objective, n_trials=25, show_progress_bar=True, n_jobs = -1)
