@@ -1,11 +1,12 @@
 import compiler_gym
+from compiler_gym.datasets import benchmark
 import gym
 import calendar
 import time
 
 from stable_baselines3 import DQN
 from compiler_gym.wrappers import TimeLimit
-from compiler_gym.wrappers import RandomOrderBenchmarks
+from compiler_gym.wrappers import CycleOverBenchmarks
 
 def train_env():
     env = compiler_gym.make(
@@ -14,14 +15,13 @@ def train_env():
         observation_space="InstCountNorm"
     )
 
-        
     del env.datasets["cbench-v1"]
     del env.datasets["generator://csmith-v0"]
     del env.datasets["generator://llvm-stress-v0"]
-    train_benchmarks = env.datasets
+    train_benchmarks = env.datasets.benchmarks()
 
     env = TimeLimit(env, max_episode_steps=500)
-    env = RandomOrderBenchmarks(env, list(train_benchmarks))
+    env = CycleOverBenchmarks(env, train_benchmarks)
     return env
 
 def test_env():
@@ -36,20 +36,15 @@ def test_env():
 
 
 def train(env, model):
-
     episodes = 1000000 # The number of episodes used to learn
     episode_length = 500 # The maximum number of transformations
-    patience = 30 # The maximum transformations with zero change tolerated before a new episode
-    for i in range(1, episodes+1):  
+    for i in range(1, episodes+1):
         model.learn(total_timesteps=episode_length)
         
-        if i % 100 == 0:
-            print ("Step: " + str(i))
         if i % 5000 == 0:
             ts = calendar.timegm(time.gmtime())
+            print ("Average Reward for Step " + str(i))
             model.save("models/DQN_model_1"+str(ts))
-            model.predict()
-
     
     print("DONE")
 
