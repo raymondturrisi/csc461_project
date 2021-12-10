@@ -1,5 +1,7 @@
 import compiler_gym
 import gym
+import calendar
+import time
 
 from stable_baselines3 import DQN
 
@@ -19,9 +21,7 @@ def test_env():
     )
     dataset = env.datasets["cbench-v1"]
     return env
-
-def create_dqn_model(**kwargs):
-    model = DQN(kwargs)
+    
 
 
 def train(env, model):
@@ -56,25 +56,33 @@ def train(env, model):
             obs = new_obs
 
             print("Step: " + str(i) + " Episode Total: " + "{:.4f}".format(episode_reward) + " Action: " + action)
+        
+        ts = calendar.timegm(time.gmtime())
+
+        model.save("/models/DQN_model_"+ts)
+    
+    print("DONE")
 
             
 
 
-if __name__ = "__main__":
+if __name__ == "__main__":
     env = train_env()
-    model = create_dqn_model(
-        env = env,
-        policy = 'MlpPolicy',
-        gamma = 0.999,
-        learning_rate = 0.0020846018394760695,
-        batch_size = 32,
-        buffer_size = 10000,
-        train_freq = 4,
-        gradient_Steps = 1,
-        exploration_fraction = 0.49275615218804686,
-        exploration_final_eps = 0.031248308796828307,
-        target_update_interval = 1,
-        learning_starts = 20000,
-        policy_kwargs = dict(net_arch='tiny'),
-        device = "cuda")
+    hyperparams = { 
+        "env": env,
+        "policy": 'MlpPolicy',
+        "gamma": 0.999,
+        "learning_rate": 0.0020846018394760695,
+        "batch_size": 32,
+        "buffer_size": 10000,
+        "train_freq": 4,
+        "gradient_steps": 1,
+        "exploration_fraction": 0.49275615218804686,
+        "exploration_final_eps": 0.031248308796828307,
+        "target_update_interval": 1,
+        "learning_starts": 20000,
+        "policy_kwargs": dict(net_arch='tiny'),
+        "device": "cuda"
+    }
+    model = DQN(**hyperparams)
     train(env,model)
