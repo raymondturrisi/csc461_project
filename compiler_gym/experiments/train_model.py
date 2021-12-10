@@ -3,6 +3,7 @@ from compiler_gym.datasets import benchmark
 import gym
 import calendar
 import time
+from numpy import e
 
 from stable_baselines3 import DQN
 from compiler_gym.wrappers import TimeLimit
@@ -39,8 +40,10 @@ def train(env, model):
     episodes = 1000000 # The number of episodes used to learn
     episode_length = 500 # The maximum number of transformations
     for i in range(1, episodes+1):
-        model.learn(total_timesteps=episode_length)
-        
+        try:
+            model.learn(total_timesteps=episode_length)
+        except Exception as e:
+            print(e.message)
         if i % 5000 == 0:
             ts = calendar.timegm(time.gmtime())
             print ("Average Reward for Step " + str(i))
