@@ -2,5 +2,5 @@
 
 while :
 do
-	./optuna_model_all.py
+	./dqn_tests.py
 done
