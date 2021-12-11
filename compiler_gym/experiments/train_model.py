@@ -50,7 +50,7 @@ def train(env, model):
         if i % 5000 == 0:
             ts = calendar.timegm(time.gmtime())
             print ("Average Reward for Step " + str(i))
-            model.save("models/DQN_model_1"+str(ts))
+            model.save("models/DQN_model_1")
     
     print("DONE")
     print("There were " + str(error_count) + " error(s) when trying to parse the LLVM bitcode")
