@@ -85,6 +85,7 @@ if __name__ == "__main__":
     # 84%
     hyperparams = { 
         "env": env,
+        "policy": 'MlpPolicy',
         "gamma": 0.9838176115174185,
         "learning_rate": 0.0009579913102614245,
         "batch_size": 256,
