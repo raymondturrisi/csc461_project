@@ -4,6 +4,7 @@ import gym
 import calendar
 import time
 from datetime import datetime
+import torch
 
 from stable_baselines3 import DQN
 from compiler_gym.wrappers import TimeLimit
@@ -84,7 +85,6 @@ if __name__ == "__main__":
     # 84%
     hyperparams = { 
         "env": env,
-        "activation_fn": "tanh",
         "gamma": 0.9838176115174185,
         "learning_rate": 0.0009579913102614245,
         "batch_size": 256,
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         "exploration_final_eps": 0.058250066257957485,
         "target_update_interval": 100,
         "learning_starts": 5000,
-        "policy_kwargs": dict(net_arch=[128, 128, 128, 128, 128]),
+        "policy_kwargs": dict(net_arch=[128, 128, 128, 128, 128], activation_fn=torch.nn.Tanh),
         "device": "cuda",
         "verbose": 1,
     }
