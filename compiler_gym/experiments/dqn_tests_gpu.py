@@ -140,8 +140,8 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
         "exploration_final_eps": exploration_final_eps,
         "target_update_interval": target_update_interval,
         "learning_starts": learning_starts,
-        "policy_kwargs": dict(net_arch=net_arch, activation_fn=activation_fn)#,
-        "device": f"cuda}"
+        "policy_kwargs": dict(net_arch=net_arch, activation_fn=activation_fn),
+        "device": f"cuda:{random.randrange(1,3)}"
     }
 
     # if trial.using_her_replay_buffer:
