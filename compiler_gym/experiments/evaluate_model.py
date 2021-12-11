@@ -18,7 +18,7 @@ def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     """
     env = compiler_gym.make(
         "llvm-ic-v0",
-        observation_space="InstCountNorm",
+        observation_space="Autophase",
         reward_space="IrInstructionCountOz",
     )
 
