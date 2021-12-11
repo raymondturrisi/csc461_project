@@ -90,7 +90,7 @@ if __name__ == "__main__":
         "batch_size": 256,
         "buffer_size": 8192,
         "train_freq": 128,
-        "subsample_steps": 1,
+        "gradient_steps": 128,
         "exploration_fraction": 0.21236553254173923,
         "exploration_final_eps": 0.058250066257957485,
         "target_update_interval": 100,
