@@ -2,5 +2,5 @@
 
 while :
 do
-	./dqn_tests.py
+	./dqn_tests_gpu.py
 done
