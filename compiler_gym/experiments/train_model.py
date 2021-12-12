@@ -54,7 +54,7 @@ def train(model):
             print("Current Time =", current_time)
             
         if i % 5000 == 0:
-            model.save("models/DQN_model_1_84")
+            model.save("models/DQN_model_4_84")
     
     print("DONE")
     print("There were " + str(error_count) + " error(s) when trying to parse the LLVM bitcode")
