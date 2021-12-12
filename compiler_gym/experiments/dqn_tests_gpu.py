@@ -141,7 +141,7 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
         "target_update_interval": target_update_interval,
         "learning_starts": learning_starts,
         "policy_kwargs": dict(net_arch=net_arch, activation_fn=activation_fn)#,
-        #"device": f"cuda}"
+        "device": f"cuda}"
     }
 
     # if trial.using_her_replay_buffer:
@@ -206,4 +206,5 @@ if __name__ == "__main__":
     study.optimize(objective, n_trials=3, n_jobs = -1)
     ts = datetime.now().strftime("%Y_%m_%d_%H%M")
     print(f"Program ended at: {ts}")
+
 

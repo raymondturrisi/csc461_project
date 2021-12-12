@@ -3,7 +3,8 @@ from compiler_gym.datasets import benchmark
 import gym
 import calendar
 import time
-from numpy import e
+from datetime import datetime
+import torch
 
 from stable_baselines3 import DQN
 from compiler_gym.wrappers import TimeLimit
@@ -13,7 +14,7 @@ def train_env():
     env = compiler_gym.make(
         "llvm-v0",
         reward_space="IrInstructionCountOz",
-        observation_space="InstCountNorm"
+        observation_space="Autophase"
     )
 
     del env.datasets["cbench-v1"]
@@ -29,14 +30,14 @@ def test_env():
     env = compiler_gym.make(
         "llvm-v0",
         reward_space="IrInstructionCountOz",
-        observation_space="InstCountNorm"
+        observation_space="Autophase"
     )
     dataset = env.datasets["cbench-v1"]
     return env
     
 
 
-def train(env, model):
+def train(model):
     episodes = 1000000 # The number of episodes used to learn
     episode_length = 500 # The maximum number of transformations
     error_count = 0
@@ -46,11 +47,14 @@ def train(env, model):
         except:
             print("Error running model. Most likely failed to parse the LLVM bitcode for some reason")
             error_count += 1
-        # print(i)
+        
+        if i % 1000 == 0:
+            print ("Step " + str(i))
+            current_time = datetime.now().strftime("%Y_%m_%d_%H%M")
+            print("Current Time =", current_time)
+            
         if i % 5000 == 0:
-            ts = calendar.timegm(time.gmtime())
-            print ("Average Reward for Step " + str(i))
-            model.save("models/DQN_model_1"+str(ts))
+            model.save("models/DQN_model_1_84")
     
     print("DONE")
     print("There were " + str(error_count) + " error(s) when trying to parse the LLVM bitcode")
@@ -60,22 +64,42 @@ def train(env, model):
 
 if __name__ == "__main__":
     env = train_env()
+    # 74%
+    # hyperparams = { 
+    #     "env": env,
+    #     "policy": 'MlpPolicy',
+    #     "gamma": 0.999,
+    #     "learning_rate": 0.0020846018394760695,
+    #     "batch_size": 32,
+    #     "buffer_size": 10000,
+    #     "train_freq": 4,
+    #     "gradient_steps": 1,
+    #     "exploration_fraction": 0.49275615218804686,
+    #     "exploration_final_eps": 0.031248308796828307,
+    #     "target_update_interval": 1,
+    #     "learning_starts": 20000,
+    #     "policy_kwargs": dict(net_arch=[64]),
+    #     "device": "cuda",
+    #     "verbose": 1,
+    # }
+    # 84%
     hyperparams = { 
         "env": env,
         "policy": 'MlpPolicy',
-        "gamma": 0.999,
-        "learning_rate": 0.0020846018394760695,
-        "batch_size": 32,
-        "buffer_size": 10000,
-        "train_freq": 4,
-        "gradient_steps": 1,
-        "exploration_fraction": 0.49275615218804686,
-        "exploration_final_eps": 0.031248308796828307,
-        "target_update_interval": 1,
-        "learning_starts": 20000,
-        "policy_kwargs": dict(net_arch=[64]),
+        "gamma": 0.9838176115174185,
+        "learning_rate": 0.0009579913102614245,
+        "batch_size": 256,
+        "buffer_size": 8192,
+        "train_freq": 128,
+        "gradient_steps": 128,
+        "exploration_fraction": 0.21236553254173923,
+        "exploration_final_eps": 0.058250066257957485,
+        "target_update_interval": 100,
+        "learning_starts": 5000,
+        "policy_kwargs": dict(net_arch=[128, 128, 128, 128, 128], activation_fn=torch.nn.Tanh),
         "device": "cuda",
         "verbose": 1,
     }
+
     model = DQN(**hyperparams)
-    train(env,model)
+    train(model)
