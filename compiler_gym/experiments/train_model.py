@@ -53,7 +53,7 @@ def train(model, file):
             print ("Step " + str(i))
             current_time = datetime.now().strftime("%Y_%m_%d_%H%M")
             print("Current Time =", current_time)
-            model.save("models/" + file)
+            model.save(file)
     
     print("DONE")
     print("There were " + str(error_count) + " error(s) when trying to parse the LLVM bitcode")
