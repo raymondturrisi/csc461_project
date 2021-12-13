@@ -5,6 +5,7 @@ import calendar
 import time
 from datetime import datetime
 import torch
+import sys
 
 from stable_baselines3 import DQN
 from compiler_gym.wrappers import TimeLimit
@@ -37,7 +38,7 @@ def test_env():
     
 
 
-def train(model):
+def train(model, file):
     episodes = 1000000 # The number of episodes used to learn
     episode_length = 500 # The maximum number of transformations
     error_count = 0
@@ -52,9 +53,7 @@ def train(model):
             print ("Step " + str(i))
             current_time = datetime.now().strftime("%Y_%m_%d_%H%M")
             print("Current Time =", current_time)
-            
-        if i % 5000 == 0:
-            model.save("models/DQN_model_4_84")
+            model.save("models/" + file)
     
     print("DONE")
     print("There were " + str(error_count) + " error(s) when trying to parse the LLVM bitcode")
@@ -101,5 +100,9 @@ if __name__ == "__main__":
         "verbose": 1,
     }
 
-    model = DQN(**hyperparams)
-    train(model)
+    model = None
+    if len(sys.argv) > 1:
+        model = DQN.load(sys.argv[1], env=env)
+    else:
+        model = DQN(**hyperparams)
+    train(model,sys.argv[1])
