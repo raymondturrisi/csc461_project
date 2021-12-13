@@ -101,8 +101,10 @@ if __name__ == "__main__":
     }
 
     model = None
+    file = "models/DQN_model_4_84"
     if len(sys.argv) > 1:
         model = DQN.load(sys.argv[1], env=env)
+        file = sys.argv[1]
     else:
         model = DQN(**hyperparams)
-    train(model,sys.argv[1])
+    train(model,file)
