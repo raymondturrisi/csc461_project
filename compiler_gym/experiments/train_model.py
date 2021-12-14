@@ -1,5 +1,6 @@
 import compiler_gym
 from compiler_gym.datasets import benchmark
+from compiler_gym.wrappers.datasets import RandomOrderBenchmarks
 import gym
 import calendar
 import time
@@ -11,7 +12,10 @@ from stable_baselines3 import DQN
 from compiler_gym.wrappers import TimeLimit
 from compiler_gym.wrappers import CycleOverBenchmarks
 
-def train_env():
+from itertools import islice
+
+
+def train_env(count):
     env = compiler_gym.make(
         "llvm-v0",
         reward_space="IrInstructionCountOz",
@@ -22,9 +26,10 @@ def train_env():
     del env.datasets["generator://csmith-v0"]
     del env.datasets["generator://llvm-stress-v0"]
     train_benchmarks = env.datasets.benchmarks()
+    train_benchmarks = list(islice(train_benchmarks, (count-1)*5000, count*5000))
 
     env = TimeLimit(env, max_episode_steps=500)
-    env = CycleOverBenchmarks(env, train_benchmarks)
+    env = RandomOrderBenchmarks(env, train_benchmarks)
     return env
 
 def test_env():
@@ -39,7 +44,7 @@ def test_env():
 
 
 def train(model, file):
-    episodes = 1000000 # The number of episodes used to learn
+    episodes = 5000 # The number of episodes used to learn
     episode_length = 500 # The maximum number of transformations
     error_count = 0
     for i in range(1, episodes+1):
@@ -48,7 +53,7 @@ def train(model, file):
         except:
             print("Error running model. Most likely failed to parse the LLVM bitcode for some reason")
             error_count += 1
-        
+        print(i)
         if i % 1000 == 0:
             print ("Step " + str(i))
             current_time = datetime.now().strftime("%Y_%m_%d_%H%M")
@@ -62,7 +67,7 @@ def train(model, file):
 
 
 if __name__ == "__main__":
-    env = train_env()
+    env = train_env(sys.argv[1])
     # 74%
     # hyperparams = { 
     #     "env": env,
@@ -101,10 +106,10 @@ if __name__ == "__main__":
     }
 
     model = None
-    file = "models/DQN_model_4_84"
-    if len(sys.argv) > 1:
-        model = DQN.load(sys.argv[1], env=env)
-        file = sys.argv[1]
+    file = "models/new_model"
+    if len(sys.argv) > 2:
+        model = DQN.load(sys.argv[2], env=env)
+        file = sys.argv[2]
     else:
         model = DQN(**hyperparams)
     train(model,file)
