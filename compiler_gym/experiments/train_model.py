@@ -67,7 +67,7 @@ def train(model, file):
 
 
 if __name__ == "__main__":
-    env = train_env(sys.argv[1])
+    env = train_env(int(sys.argv[1]))
     # 74%
     # hyperparams = { 
     #     "env": env,
