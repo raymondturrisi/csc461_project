@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ $1 == "DQN"]
+if [[ $1 == "DQN"]]
 then
     for COUNT in {1..2200}
     do
@@ -9,7 +9,7 @@ then
     done
 fi
 
-if [ $1 == "A2C"]
+if [[ $1 == "A2C"]]
 then
     for COUNT in {1..2200}
     do
