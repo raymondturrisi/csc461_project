@@ -26,35 +26,38 @@ import time
 import logging
 import sys
 
+import random
+
+with open(f"../func/not_cbench_cg.txt", "r") as benchmarks_files:
+  benchmarks = benchmarks_files.readlines()
+
 def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     """Make the reinforcement learning environment for this experiment.
     
       From FB example.
     """
+    global benchmarks
     env = compiler_gym.make(
         "llvm-ic-v0",
         observation_space="Autophase",
         reward_space="IrInstructionCountOz",
     )
-    
-    env = TimeLimit(env, max_episode_steps=1000)
 
-    del env.datasets["cbench-v1"]
-    del env.datasets["generator://csmith-v0"]
-    del env.datasets["generator://llvm-stress-v0"]
-    dataset = env.datasets.benchmarks() # Every dataset besides cbench
+    # Finally, we impose a time limit on the environment so that every episode
+    # for 5 steps or fewer. This is because the environment's task is continuous
+    # and no action is guaranteed to result in a terminal state. Adding a time
+    # limit means we don't have to worry about learning when an agent should 
+    # stop, though again this limits the potential improvements that the agent
+    # can achieve compared to using an unbounded maximum episode length.
+    
+    env = TimeLimit(env, max_episode_steps=2000)
 
     # Each dataset has a `benchmarks()` method that returns an iterator over the
     # benchmarks within the dataset. Here we will use iterator sliceing to grab a 
     # handful of benchmarks for training and validation.
 
-    N_benchmarks = 5000
-
-    train_benchmarks = list(islice(dataset, N_benchmarks)) # N_bechmarks total benchmarks the dataset
-    # train_benchmarks = list(dataset)
-    # len(train_benchmarks) # , val_benchmarks = train_benchmarks[:50], train_benchmarks[50:]
-
-    env = CycleOverBenchmarks(env, train_benchmarks)
+    test_set = random.choices(benchmarks,k=5000)
+    env = CycleOverBenchmarks(env, test_set)
     return env
 
 def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
@@ -76,7 +79,7 @@ def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     # limit means we don't have to worry about learning when an agent should 
     # stop, though again this limits the potential improvements that the agent
     # can achieve compared to using an unbounded maximum episode length.
-    env = TimeLimit(env, max_episode_steps=1000)
+    env = TimeLimit(env, max_episode_steps=2000)
 
     dataset = env.datasets["cbench-v1"] # Small dataset
 
@@ -130,6 +133,7 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
         "target_update_interval": target_update_interval,
         "learning_starts": learning_starts,
         "policy_kwargs": dict(net_arch=net_arch),
+        "device": f"cuda:{random.randrange(0,3)}"
     }
 
     # if trial.using_her_replay_buffer:
@@ -155,14 +159,14 @@ def objective(trial):
 
     model = DQN(**(sample_dqn_params(trial))) # Instantiate the model with sampled hyperparameters.
 
-
     # Iteratively train the model on the training environment.
-    total_steps = 5000
-    step_size = 1000
+    total_steps = 50000
+    
+    step_size = 2000
+
     for steps in range(1000, total_steps, step_size): # Steps goes up by step_size until it reaches total_steps.
 
       model.learn(total_timesteps=step_size) # Train
-
       score = eval_model_on_compilergym_benchmark(model) # Evaluate
 
       # Pruning. Example here: https://github.com/optuna/optuna-examples/blob/6a6b20ad634627eebb3e7e104f73b70b45c6e624/simple_pruning.py
@@ -173,11 +177,10 @@ def objective(trial):
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
             raise optuna.TrialPruned()
-          
-      
+        
       # model.save(f"dqn_llvm_model_{ ts }")
 
-      print("Model saved. . .")
+      print(f"Model on: {steps}/{total_steps}")
 
     return score
 
@@ -236,6 +239,7 @@ def sample_sac_params(trial: optuna.Trial) -> Dict[str, Any]:
         "tau": tau,
         "target_entropy": target_entropy,
         "policy_kwargs": dict(log_std_init=log_std_init, net_arch=net_arch),
+        "device": "cuda"
     }
 
     # if trial.using_her_replay_buffer:
@@ -291,4 +295,4 @@ if __name__ == "__main__":
 
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
     study = optuna.create_study(study_name=f"dqn_test_all", direction="maximize", storage=database_url, load_if_exists=True)
-    study.optimize(objective, n_trials=15, show_progress_bar=True, n_jobs = -1)
+    study.optimize(objective, n_trials=25, show_progress_bar=True, n_jobs = -1)
