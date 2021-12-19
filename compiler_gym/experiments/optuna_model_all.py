@@ -28,8 +28,8 @@ import sys
 
 import random
 
-with open(f"../func/not_cbench_cg.txt", "r") as benchmarks_files:
-  benchmarks = benchmarks_files.readlines()
+#with open(f"../func/not_cbench_cg.txt", "r") as benchmarks_files:
+#  benchmarks = benchmarks_files.readlines()
 
 
 def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
@@ -37,7 +37,7 @@ def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     
       From FB example.
     """
-    global benchmarks
+    #global benchmarks
     env = compiler_gym.make(
         "llvm-ic-v0",
         observation_space="Autophase",
@@ -53,13 +53,21 @@ def make_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
     # can achieve compared to using an unbounded maximum episode length.
     
     env = TimeLimit(env, max_episode_steps=2000)
+    del env.datasets["generator://csmith-v0"]
+    del env.datasets["generator://llvm-stress-v0"]
+    del env.datasets["cbench-v1"]
 
     # Each dataset has a `benchmarks()` method that returns an iterator over the
     # benchmarks within the dataset. Here we will use iterator sliceing to grab a 
     # handful of benchmarks for training and validation.
 
-    test_set = random.choices(benchmarks,k=5000)
-    env = CycleOverBenchmarks(env, test_set)
+    #test_set = random.choices(benchmarks,k=5000)
+    
+    dataset = env.datasets.benchmarks()
+    
+    train_benchmarks = list(islice(dataset, 5000))
+
+    env = CycleOverBenchmarks(env, train_benchmarks)
     return env
 
 def make_test_env(env_config=None) -> compiler_gym.envs.CompilerEnv:
@@ -101,7 +109,7 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
     NOTE: Comes from: https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/utils/hyperparams_opt.py
     Sampler for DQN hyperparams.
     :param trial:
-    :return:
+    :retur/
     """
     policy = 'MlpPolicy' # trial.suggest_categorical("policy", ["MlpPolicy", "CnnPolicy"])
     gamma = trial.suggest_categorical("gamma", [0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999])
@@ -134,8 +142,8 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
         "exploration_final_eps": exploration_final_eps,
         "target_update_interval": target_update_interval,
         "learning_starts": learning_starts,
-        "policy_kwargs": dict(net_arch=net_arch),
-        "device": f"cuda:{random.randrange(0,3)}"
+        "policy_kwargs": dict(net_arch=net_arch)#,
+        #"device": f"cuda:{random.randrange(0,3)}"
     }
 
     # if trial.using_her_replay_buffer:
@@ -292,10 +300,10 @@ def multi_model_objective(trial):
     return score
 
 if __name__ == "__main__":
-    database_url = "postgresql://yzvxgwluxjnkap:8cd45bfa27d5df1577be2e2b20a35c90cf154d272c8b5975bb28266852c7dbd9@ec2-3-231-112-124.compute-1.amazonaws.com:5432/d1mqml0sjdqj22"
+    database_url = "postgresql://uuiqr5ei8ll3q:pd0a212fdb3d2379d6b849a598a75c6825267df881bb20ac19d97f2afd24a4aa3@ec2-3-218-203-60.compute-1.amazonaws.com:5433/d6h21bev0n8gtf"
 
     ts = calendar.timegm(time.gmtime()) # Timestamp for uniqueness of the study name.
 
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
     study = optuna.create_study(study_name=f"dqn_test_all", direction="maximize", storage=database_url, load_if_exists=True)
-    study.optimize(objective, n_trials=25, show_progress_bar=True, n_jobs = -1)
+    study.optimize(objective, n_trials=5, n_jobs = -1)
