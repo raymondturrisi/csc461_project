@@ -118,7 +118,7 @@ def sample_dqn_params(trial: optuna.Trial) -> Dict[str, Any]:
         "target_update_interval": target_update_interval,
         "learning_starts": learning_starts,
         "policy_kwargs": dict(net_arch=net_arch, activation_fn=activation_fn),
-        "device": f"cuda:{random.randrange(0,3)}"
+        "device": f"cuda"
     }
 
     return hyperparams
